@@ -2,7 +2,7 @@ import gym
 import numpy as np
 import cv2
 
-def resize_frame(frame):
+def process_frame(frame):
     """crop the frame image"""
     frame = frame[30:-12, 5:-4]
     frame = np.average(frame, axis=2)
