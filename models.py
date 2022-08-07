@@ -1,6 +1,20 @@
+import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from collections import namedtuple, deque
+from utils import *
+
+
+class RandomAgent():
+    """
+    an agent take random actions
+    """
+    def __init__(self, num_actions=4):
+        self.num_actions = num_actions
+    def get_action(self):
+        action = random.randint(0, num_actions - 1)
+        return action
 
 class DQN(nn.Module):
     def __init__(self, num_actions):
@@ -33,5 +47,30 @@ class DQN(nn.Module):
 
 
 
-class ReplayMemory(object):
-    pass
+class ReplayBuffer():
+    """Replay buffer stores the last N transitions"""
+    def __init__(self, max_size=100000, history=4, batch_size=32):
+        """
+        :param max_size: the maximal number of stored transitions
+        :param history: the number of frames stacked to create a state
+        :param batch_size: the number of transitions returned in a minibatch
+        """
+        self.max_size = max_size
+        self.history = history
+        self.batch_size = batch_size
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
