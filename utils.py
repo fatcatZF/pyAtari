@@ -20,7 +20,9 @@ def frameProcessor(frame, target_height=84, target_width=84, is_plot=False):
     frame = np.array(frame, dtype=np.uint8)
     if is_plot:
         plt.imshow(frame)
-    return torch.from_numpy(frame)
+    frame = torch.from_numpy(frame)
+    frame.unsqueeze_(0) #shape:[n_channels, width, height]
+    return frame
 
 
 
