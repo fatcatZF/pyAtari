@@ -2,6 +2,7 @@ import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as optim
 from collections import namedtuple, deque
 from utils import *
 
@@ -12,7 +13,7 @@ class RandomAgent():
     """
     def __init__(self, num_actions=4):
         self.num_actions = num_actions
-    def get_action(self):
+    def get_action(self, state=None):
         action = random.randint(0, self.num_actions - 1)
         return action
 
@@ -117,6 +118,84 @@ class ReplayBuffer():
             batch.append((state, action, next_state, reward, is_done))
 
         return batch
+
+
+class QAgent():
+    def __init__(self, num_actions, optimizer_type="Adam", lr=0.00025,
+                 loss_criterion=nn.SmoothL1Loss(),
+                 load_policy_path=None,
+                 load_target_path=None,
+                 trained_epochs=0):
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.policy_net = DQN(num_actions)
+        self.target_net = DQN(num_actions)
+        self.target_net.load_state_dict(self.policy_net.state_dict())
+        if load_policy_path is not None:
+            # load policy network
+            self.policy_net = torch.load(load_policy_path)
+        if load_target_path is not None:
+            # load target network
+            self.target_net = torch.load(load_target_path)
+
+        self.policy_net.to(device)
+        self.target_net.to(device)
+
+        if optimizer_type.upper() == "ADAM":
+            self.optimizer = optim.Adam(self.policy_net.parameters(),
+                                        lr=lr)
+        else:
+            self.optimizer = optim.RMSprop(self.policy_net.parameters(),
+                                           lr=lr)
+        self.loss_criterion = loss_criterion
+        self.trained_epochs = trained_epochs
+
+    def get_action(self, state):
+        """predict the action for a state"""
+        # state, shape:[batch_size=1, 4, 84,84]
+        with torch.no_grad():
+            self.policy_net.eval()
+            Q = self.policy_net(state.float())
+            # Q, shape:[batch_size=1, num_actions]
+            action = torch.argmax(Q, -1)
+        return action.item()
+
+    def replay(self, replay_buffer, gamma=0.99):
+        # train the policy net one epoch
+        batch = replay_buffer.get_minibatch()
+        batch_trans = list(map(list, zip(*batch)))
+        states = torch.stack(batch_trans[0], dim=0)
+        actions = batch_trans[1]
+        batch_size = len(actions)
+        batch_indices = range(batch_size)
+        next_states = torch.stack(batch_trans[2], dim=0)
+        rewards = torch.tensor(batch_trans[3])
+        is_dones = torch.tensor(batch_trans[4])
+        # predict Q values
+        Q_predicted = self.policy_net(states.float())
+        # get predicted Q(s,a)
+        Q_predicted = Q_predicted[batch_indices, actions]
+
+        # get target Q values
+        with torch.no_grad():
+            self.target_net.eval()
+            Q_next = self.target_net(next_states.float())
+            Q_next_max = torch.max(Q_next, -1).values
+            Q_next_max[is_dones] = 0.
+            Q_target = gamma * Q_next_max + rewards
+
+        # train policy network
+        loss = self.loss_criterion(Q_predicted, Q_target)
+        self.optimizer.zero_grad()
+        loss.backward()
+        for param in self.policy_net.parameters():
+            param.grad.data.clamp_(-1, 1)
+        self.optimizer.step()
+        self.trained_epochs += 1
+
+        return self.trained_epochs, loss.item()
+
+    def update_target(self):
+        self.target_net.load_state_dict(self.policy_net.state_dict())
 
 
 
