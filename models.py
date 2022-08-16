@@ -50,7 +50,7 @@ class DQN(nn.Module):
 class ReplayBuffer():
     """Replay Buffer stores the last N transitions"""
 
-    def __init__(self, max_size=1000, history=4, batch_size=32):
+    def __init__(self, max_size=10000, history=4, batch_size=32):
         """
         args:
           max_size: the maximal number of stored transitions
@@ -80,6 +80,15 @@ class ReplayBuffer():
         self.next_frames.append(next_frame)
         self.rewards.append(reward)
         self.is_dones.append(is_done)
+
+    def current_state_available(self):
+        """
+        Check whether the current state is avalable
+        """
+        if (len(self.is_dones) < self.history) or (True in list(self.is_dones)[-self.history:]):
+            return False
+        else:
+            return True
 
     def get_current_state(self):
         """create current state if there exists at least 4 non-terminal frames"""
