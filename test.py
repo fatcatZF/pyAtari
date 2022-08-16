@@ -1,5 +1,5 @@
 """
-Test trained agents
+Test trained agents, save the animation
 """
 from __future__ import division
 from __future__ import print_function
@@ -82,8 +82,8 @@ for t in range(args.simulation_steps):
     else:
         action = np.random.choice(num_actions)
 
-    print("step: ",t)
-    print("action: ", action)
+    #print("step: ",t)
+    #print("action: ", action)
 
     next_frame, reward, is_done, info = env.step(action)
     episode_done = is_done
@@ -93,8 +93,8 @@ for t in range(args.simulation_steps):
         lives = current_lives
         episode_done = True
 
-    print("is_done? ",is_done)
-    print("Info: ", info)
+    #print("is_done? ",is_done)
+    #print("Info: ", info)
     next_frame_tensor = frameProcessor(next_frame)
     replay_buffer.add_experience(frame_tensor, action, next_frame_tensor, reward, episode_done)
 
