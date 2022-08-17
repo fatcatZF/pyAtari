@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from collections import namedtuple, deque
+from collections import deque
 from utils import *
 
 
@@ -158,9 +158,15 @@ class QAgent():
         self.loss_criterion = loss_criterion
         self.trained_epochs = trained_epochs
 
+
     def get_action(self, state):
         """predict the action for a state"""
         # state, shape:[batch_size=1, 4, 84,84]
+        #check available device.
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        state.to(device)
+        self.policy_net.to(device)
+        self.target_net.to(device)
         with torch.no_grad():
             self.policy_net.eval()
             Q = self.policy_net(state.float())
@@ -170,15 +176,19 @@ class QAgent():
 
     def replay(self, replay_buffer, gamma=0.99):
         # train the policy net one epoch
+        # check available device.
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.policy_net.to(device)
+        self.target_net.to(device)
         batch = replay_buffer.get_minibatch()
         batch_trans = list(map(list, zip(*batch)))
-        states = torch.stack(batch_trans[0], dim=0)
+        states = torch.stack(batch_trans[0], dim=0).to(device)
         actions = batch_trans[1]
         batch_size = len(actions)
         batch_indices = range(batch_size)
-        next_states = torch.stack(batch_trans[2], dim=0)
-        rewards = torch.tensor(batch_trans[3])
-        is_dones = torch.tensor(batch_trans[4])
+        next_states = torch.stack(batch_trans[2], dim=0).to(device)
+        rewards = torch.tensor(batch_trans[3]).to(device)
+        is_dones = torch.tensor(batch_trans[4]).to(device)
         # predict Q values
         Q_predicted = self.policy_net(states.float())
         # get predicted Q(s,a)
@@ -204,6 +214,10 @@ class QAgent():
         return self.trained_epochs, loss.item()
 
     def update_target(self):
+        # check available device.
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.policy_net.to(device)
+        self.target_net.to(device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
 
 
