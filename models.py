@@ -164,7 +164,7 @@ class QAgent():
         # state, shape:[batch_size=1, 4, 84,84]
         #check available device.
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        state.to(device)
+        state = state.to(device)
         self.policy_net.to(device)
         self.target_net.to(device)
         with torch.no_grad():
