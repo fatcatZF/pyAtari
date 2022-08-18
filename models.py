@@ -136,7 +136,7 @@ class QAgent():
                  load_target_path=None,
                  trained_epochs=0,
                  trained_games=0,
-                 game_name=0,
+                 game_name="BreakoutDeterministic-v4",
                  epsilon=1.):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.policy_net = DQN(num_actions)
