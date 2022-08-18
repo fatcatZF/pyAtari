@@ -134,7 +134,10 @@ class QAgent():
                  loss_criterion=nn.SmoothL1Loss(),
                  load_policy_path=None,
                  load_target_path=None,
-                 trained_epochs=0):
+                 trained_epochs=0,
+                 trained_games=0,
+                 game_name=0,
+                 epsilon=1.):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.policy_net = DQN(num_actions)
         self.target_net = DQN(num_actions)
@@ -157,7 +160,9 @@ class QAgent():
                                            lr=lr)
         self.loss_criterion = loss_criterion
         self.trained_epochs = trained_epochs
-
+        self.trained_games = trained_games
+        self.game_name = game_name
+        self.epsilon = epsilon
 
     def get_action(self, state):
         """predict the action for a state"""
